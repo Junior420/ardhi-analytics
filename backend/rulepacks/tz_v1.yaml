@@ -1,0 +1,113 @@
+# Tanzania rule pack — DRAFT v1
+#
+# STATUS: reference draft for development. Every rate and procedure below must
+# be verified against current law / TRA practice by a qualified professional
+# before any reliance. Rates carry effective-date fields so updates are
+# auditable. This pack informs; it is not legal or tax advice.
+
+jurisdiction: TZ
+name: Tanzania (Mainland)
+version: 1
+status: draft
+currency: TZS
+last_reviewed: 2026-07-04
+sources_to_verify:
+  - Land Act, 1999 (Cap 113) and Land Regulations
+  - Village Land Act, 1999 (Cap 114)
+  - Income Tax Act (Cap 332) — single instalment tax on realization of land/buildings
+  - Stamp Duty Act (Cap 189)
+  - Value Added Tax Act, 2014
+  - Mortgage Financing (Special Provisions) Act, 2008
+  - Valuation and Valuers Registration Act, 2016
+  - Tanzania Investment Act / TIC derivative rights
+  - Capital Markets and Securities Authority (CMSA) regulations
+
+taxes:
+  stamp_duty_transfer:
+    description: Stamp duty on conveyance/transfer of landed property
+    base: consideration_or_market_value
+    rate: 0.01
+    effective_from: 2020-07-01
+    verify: true
+  capital_gains_single_instalment:
+    description: Single instalment income tax on realization of interest in land/buildings
+    base: gain_on_realization
+    rate_resident: 0.10
+    rate_non_resident: 0.20
+    effective_from: 2020-07-01
+    verify: true
+  withholding_tax_rent:
+    description: Withholding tax on rental income paid to resident persons
+    base: gross_rent
+    rate_residential: 0.10
+    rate_commercial: 0.10
+    effective_from: 2020-07-01
+    verify: true
+  vat:
+    description: VAT — commercial property sales/leases may attract VAT; residential leases exempt
+    rate: 0.18
+    applies_to: [commercial_lease, commercial_sale_by_registered_trader]
+    effective_from: 2015-07-01
+    verify: true
+  registration_fee:
+    description: Title transfer registration fee (Registrar of Titles) — flat estimate
+    base: flat
+    amount: 50000
+    effective_from: 2020-07-01
+    verify: true
+  legal_fees_estimate:
+    description: Typical conveyancing legal fees (market estimate, not statutory)
+    base: consideration_or_market_value
+    rate: 0.01
+    verify: true
+
+tenure:
+  granted_right_of_occupancy:
+    terms_years: [33, 66, 99]
+    note: Freehold does not exist; all land is public land vested in the President as trustee.
+  customary_right_of_occupancy:
+    note: Village land under Village Land Act; conversion procedures apply before formal transactions.
+  foreign_ownership:
+    note: >
+      Non-citizens generally may not hold land except through a Tanzania Investment
+      Centre (TIC) derivative right for investment purposes, or via a company
+      arrangement compliant with the Land Act. Flag any non-resident buyer.
+    flag_non_resident: true
+
+procedures:
+  transfer_of_registered_land:
+    - step: Official search at the land registry
+      typical_days: 3
+    - step: Valuation by a registered valuer (required for stamp duty assessment)
+      typical_days: 7
+      legal_basis: Valuation and Valuers Registration Act, 2016
+    - step: Obtain Commissioner for Lands consent to disposition
+      typical_days: 30
+      legal_basis: Land Act, 1999 s.36-41
+    - step: Assessment and payment of stamp duty and capital gains tax (TRA)
+      typical_days: 14
+    - step: Registration of transfer with Registrar of Titles
+      typical_days: 21
+    - step: Verify land rent is paid up to date (arrears block consent)
+      typical_days: 1
+
+compliance_flags:
+  - id: land_rent_arrears
+    message: Confirm annual land rent is fully paid; arrears block consent to transfer.
+  - id: statutory_valuation
+    message: Statutory valuations must be prepared and signed by a valuer registered under the Valuation and Valuers Registration Act, 2016.
+  - id: non_resident_buyer
+    message: Non-citizen acquiring land — structure via TIC derivative right or compliant entity; obtain specialist advice.
+    condition: buyer_non_resident
+  - id: village_land
+    message: Customary/village land — conversion and village council procedures required before formal transfer.
+    condition: tenure_customary
+  - id: crowdfunding_offer
+    message: Offering interests to the public may constitute a securities offer requiring CMSA approval/licensing.
+    condition: is_crowdfunded
+
+disclaimer: >
+  This rule pack is draft reference data prepared for analysis software. It is
+  not legal, tax, or investment advice. Rates and procedures change; verify
+  with the Tanzania Revenue Authority, Ministry of Lands, and qualified counsel
+  before relying on any output.
