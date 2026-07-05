@@ -115,6 +115,33 @@
     <div class="card" style="margin-bottom:16px"><h2>Market data — Tanzania</h2>
       <div class="tiles" id="marketTiles"><div class="placeholder" style="padding:10px">Loading live market data…</div></div>
       <div class="disclaimer" id="marketNote"></div></div>
+    <div class="card" style="margin-bottom:16px"><h2>Comparables database</h2>
+      <div class="row">
+        <div><label>Kind</label><select id="cKind"><option value="sale">Sale</option><option value="rent">Rent (annual)</option></select></div>
+        <div><label>Use</label><select id="cUse"><option value="residential">Residential</option><option value="commercial">Commercial</option><option value="land">Land</option></select></div>
+      </div>
+      <div class="row">
+        <div><label>Region</label><input id="cRegion" value="Dar es Salaam"></div>
+        <div><label>District</label><input id="cDistrict" value="Kinondoni"></div>
+      </div>
+      <div class="row">
+        <div><label>Price (TZS)</label><input id="cPrice" type="number" placeholder="e.g. 420000000"></div>
+        <div><label>Area (m²)</label><input id="cArea" type="number" placeholder="e.g. 310"></div>
+      </div>
+      <div class="row">
+        <div><label>Observed (YYYY-MM)</label><input id="cDate" placeholder="2026-03"></div>
+        <div><label>Source</label><input id="cSource" placeholder="agency / registry / valuer"></div>
+      </div>
+      <div class="row">
+        <button type="button" class="secondary" style="margin-top:10px" id="addCompBtn">Contribute comp</button>
+        <button type="button" class="secondary" style="margin-top:10px" id="statsBtn">Market stats</button>
+      </div>
+      <div class="row">
+        <div><label>Subject area (m²) for indication</label><input id="subjArea" type="number" placeholder="e.g. 320"></div>
+        <button type="button" class="secondary" style="margin-top:22px" id="indicateBtn">Indicate value</button>
+      </div>
+      <div class="tiles" id="compTiles" style="margin-top:12px"></div>
+      <div class="disclaimer" id="compNote"></div></div>
     <div class="card" id="placeholderCard"><div class="placeholder">Enter your deal on the left and click <b>Analyze deal</b>.<br>Metrics, projections, taxes and the Tanzania compliance checklist appear here.</div></div>
     <div id="results">
       <div class="card"><h2>Key metrics</h2><div class="tiles" id="tiles"></div></div>

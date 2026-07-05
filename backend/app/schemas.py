@@ -54,6 +54,30 @@ class ValuationRequest(BaseModel):
     approach_weights: Optional[dict[str, float]] = None
 
 
+class CompIn(BaseModel):
+    kind: Literal["sale", "rent"]
+    use: Literal["residential", "commercial", "land"]
+    region: str = Field(..., min_length=2)
+    district: str = Field(..., min_length=2)
+    price: float = Field(..., gt=0, description="Sale price, or ANNUAL rent for kind=rent")
+    currency: str = "TZS"
+    area_sqm: Optional[float] = Field(None, gt=0)
+    observed_date: str = Field(..., pattern=r"^\d{4}-\d{2}(-\d{2})?$",
+                               description="YYYY-MM or YYYY-MM-DD")
+    source: str = Field(..., min_length=3, description="Where this observation comes from")
+    contributor: str = "anonymous"
+    notes: str = ""
+
+
+class IndicateRequest(BaseModel):
+    area_sqm: float = Field(..., gt=0)
+    kind: Literal["sale", "rent"] = "sale"
+    use: Optional[Literal["residential", "commercial", "land"]] = None
+    region: Optional[str] = None
+    district: Optional[str] = None
+    since: Optional[str] = None
+
+
 class YearRowOut(BaseModel):
     year: int
     gross_potential_income: float

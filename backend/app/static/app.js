@@ -257,3 +257,75 @@ async function loadMarket() {
   }
 }
 loadMarket();
+
+function compFilters() {
+  return {
+    kind: document.getElementById("cKind").value,
+    use: document.getElementById("cUse").value,
+    region: document.getElementById("cRegion").value || null,
+    district: document.getElementById("cDistrict").value || null,
+  };
+}
+
+function renderCompStats(s) {
+  const tiles = [tile("Comps", s.count), tile("With area", s.count_with_area)];
+  if (s.unit_price_median != null) {
+    tiles.push(tile("Median TZS/m²", Math.round(s.unit_price_median).toLocaleString("en-US")),
+               tile("Range TZS/m²", `${Math.round(s.unit_price_min).toLocaleString("en-US")} – ${Math.round(s.unit_price_max).toLocaleString("en-US")}`),
+               tile("Confidence", s.confidence));
+  } else {
+    tiles.push(tile("Confidence", s.confidence));
+  }
+  document.getElementById("compTiles").innerHTML = tiles.join("");
+  document.getElementById("compNote").textContent = s.note ||
+    (s.date_range ? `Evidence from ${s.date_range[0]} to ${s.date_range[1]}. Screening statistics, not a valuation.` : "");
+}
+
+document.getElementById("addCompBtn").addEventListener("click", async () => {
+  errBox.textContent = "";
+  const body = {
+    ...compFilters(),
+    price: parseFloat(document.getElementById("cPrice").value),
+    area_sqm: parseFloat(document.getElementById("cArea").value) || null,
+    observed_date: document.getElementById("cDate").value,
+    source: document.getElementById("cSource").value,
+    contributor: "web-ui",
+  };
+  const res = await fetch("/api/comps", {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const b = await res.json().catch(() => ({}));
+    errBox.textContent = typeof b.detail === "string" ? b.detail : JSON.stringify(b.detail || "invalid comp");
+    return;
+  }
+  document.getElementById("statsBtn").click();
+});
+
+document.getElementById("statsBtn").addEventListener("click", async () => {
+  errBox.textContent = "";
+  const f = compFilters();
+  const qs = new URLSearchParams(Object.fromEntries(Object.entries(f).filter(([, v]) => v)));
+  renderCompStats(await (await fetch(`/api/comps/stats?${qs}`)).json());
+});
+
+document.getElementById("indicateBtn").addEventListener("click", async () => {
+  errBox.textContent = "";
+  const area = parseFloat(document.getElementById("subjArea").value);
+  if (!area) { errBox.textContent = "Enter a subject area first."; return; }
+  const res = await fetch("/api/comps/indicate", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...compFilters(), area_sqm: area }),
+  });
+  const out = await res.json();
+  if (out.indicated_value != null) {
+    renderCompStats(out.stats);
+    document.getElementById("compTiles").innerHTML =
+      tile("Indicated value", fmt(out.indicated_value)) +
+      tile("Range", `${fmt(out.indicated_range[0])} – ${fmt(out.indicated_range[1])}`) +
+      document.getElementById("compTiles").innerHTML;
+    document.getElementById("compNote").textContent = out.note;
+  } else {
+    document.getElementById("compNote").textContent = out.note;
+  }
+});

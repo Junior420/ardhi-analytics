@@ -25,7 +25,12 @@ Enter a rental/commercial property deal → one click →
   growth, lending rate) and daily FX, with provenance stamps, a 6-hour cache,
   staleness flags, and curated reference fallback so the app degrades
   gracefully offline
-- Simple web UI (no build step, includes live market data card)
+- Comparables database (`/api/comps`): contributed sale/rent observations
+  with source attribution, unit-price market stats (median/range per m²),
+  dispersion-aware confidence grades, and screening value indications;
+  demo seed script with clearly-labeled illustrative data
+  (`python -m scripts.seed_comps`)
+- Simple web UI (no build step; live market data + comparables cards)
 
 ## Run it
 
@@ -70,6 +75,5 @@ backend/
 
 ## Next (from the blueprint)
 
-Remaining Phase 1: comparables database with
-contribution workflow, auth & multi-user, report templates for valuers and
+Remaining Phase 1: auth & multi-user, report templates for valuers and
 banks, Monte Carlo simulation, Swahili localization.

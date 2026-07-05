@@ -1,0 +1,147 @@
+"""Comparables database: contributed sale/rent observations + market stats.
+
+The long-term moat: real transaction evidence. Every record carries its
+source and contributor. Statistics are unit-price based (per m²) and come
+with dispersion-aware confidence grades so thin evidence is never presented
+as strong.
+"""
+
+from __future__ import annotations
+
+import sqlite3
+import statistics
+import uuid
+from datetime import datetime, timezone
+from typing import Optional
+
+from . import store
+
+_SCHEMA = """CREATE TABLE IF NOT EXISTS comparables (
+    id TEXT PRIMARY KEY,
+    kind TEXT NOT NULL CHECK (kind IN ('sale', 'rent')),
+    use TEXT NOT NULL CHECK (use IN ('residential', 'commercial', 'land')),
+    region TEXT NOT NULL,
+    district TEXT NOT NULL,
+    price REAL NOT NULL CHECK (price > 0),
+    currency TEXT NOT NULL DEFAULT 'TZS',
+    area_sqm REAL CHECK (area_sqm IS NULL OR area_sqm > 0),
+    observed_date TEXT NOT NULL,
+    source TEXT NOT NULL,
+    contributor TEXT NOT NULL DEFAULT 'anonymous',
+    notes TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL
+)"""
+
+
+def _conn() -> sqlite3.Connection:
+    store.DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(store.DB_PATH)
+    conn.row_factory = sqlite3.Row
+    conn.execute(_SCHEMA)
+    return conn
+
+
+def add_comp(rec: dict) -> dict:
+    rec = dict(rec)
+    rec["id"] = str(uuid.uuid4())
+    rec["created_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    with _conn() as conn:
+        conn.execute(
+            """INSERT INTO comparables
+               (id, kind, use, region, district, price, currency, area_sqm,
+                observed_date, source, contributor, notes, created_at)
+               VALUES (:id, :kind, :use, :region, :district, :price, :currency,
+                       :area_sqm, :observed_date, :source, :contributor, :notes,
+                       :created_at)""", rec)
+    return rec
+
+
+def _where(filters: dict) -> tuple[str, list]:
+    clauses, params = [], []
+    for field in ("kind", "use", "region", "district"):
+        if filters.get(field):
+            # region/district match case-insensitively; kind/use are enums
+            clauses.append(f"LOWER({field}) = LOWER(?)")
+            params.append(filters[field])
+    if filters.get("since"):
+        clauses.append("observed_date >= ?")
+        params.append(filters["since"])
+    sql = (" WHERE " + " AND ".join(clauses)) if clauses else ""
+    return sql, params
+
+
+def list_comps(filters: dict, limit: int = 100) -> list[dict]:
+    sql, params = _where(filters)
+    with _conn() as conn:
+        rows = conn.execute(
+            f"SELECT * FROM comparables{sql} ORDER BY observed_date DESC LIMIT ?",
+            params + [min(limit, 500)]).fetchall()
+    return [dict(r) for r in rows]
+
+
+def delete_comp(comp_id: str) -> bool:
+    with _conn() as conn:
+        cur = conn.execute("DELETE FROM comparables WHERE id = ?", (comp_id,))
+    return cur.rowcount > 0
+
+
+def _confidence(n: int, rel_dispersion: Optional[float], spread: Optional[float]) -> str:
+    """Evidence quality. rel_dispersion (MAD/median) is robust to outliers,
+    so the max/min spread is checked separately — one wild comp should still
+    lower trust in the evidence set."""
+    if n < 3 or rel_dispersion is None:
+        return "low"
+    if n >= 5 and rel_dispersion <= 0.15:
+        grade = "high"
+    elif rel_dispersion <= 0.30:
+        grade = "medium"
+    else:
+        return "low"
+    if spread is not None and spread > 2.0:
+        grade = "medium" if grade == "high" else "low"
+    return grade
+
+
+def stats(filters: dict) -> dict:
+    """Unit-price statistics (per m²) over matching comps that have an area."""
+    comps = list_comps(filters, limit=500)
+    unit_prices = [c["price"] / c["area_sqm"] for c in comps if c["area_sqm"]]
+    out = {"count": len(comps), "count_with_area": len(unit_prices), "filters": filters}
+    if not unit_prices:
+        out.update({"confidence": "low",
+                    "note": "No comparables with area data match these filters."})
+        return out
+    median = statistics.median(unit_prices)
+    mad = statistics.median(abs(p - median) for p in unit_prices)
+    rel = mad / median if median else None
+    out.update({
+        "unit_price_median": median,
+        "unit_price_mean": statistics.fmean(unit_prices),
+        "unit_price_min": min(unit_prices),
+        "unit_price_max": max(unit_prices),
+        "relative_dispersion": rel,
+        "date_range": [min(c["observed_date"] for c in comps),
+                       max(c["observed_date"] for c in comps)],
+        "confidence": _confidence(len(unit_prices), rel,
+                                  max(unit_prices) / min(unit_prices)),
+    })
+    return out
+
+
+def indicate_value(area_sqm: float, filters: dict) -> dict:
+    """Evidence-based value indication: median unit price × subject area.
+    A screening tool, not a valuation — heavily caveated by confidence."""
+    if area_sqm <= 0:
+        raise ValueError("area_sqm must be positive")
+    s = stats(filters)
+    if "unit_price_median" not in s:
+        return {"indicated_value": None, "stats": s,
+                "note": "Insufficient comparable evidence for an indication."}
+    return {
+        "indicated_value": s["unit_price_median"] * area_sqm,
+        "indicated_range": [s["unit_price_min"] * area_sqm, s["unit_price_max"] * area_sqm],
+        "area_sqm": area_sqm,
+        "stats": s,
+        "note": ("Screening indication only (median unit price x area); "
+                 "confidence: " + s["confidence"] + ". Not a valuation."),
+    }

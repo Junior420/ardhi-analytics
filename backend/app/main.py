@@ -13,10 +13,10 @@ from fastapi.staticfiles import StaticFiles
 
 from connectors import market_snapshot
 
-from . import insights, rulepack, store
+from . import comps, insights, rulepack, store
 from .analysis import analyze
 from .report import build_pdf
-from .schemas import AnalysisResult, DealInput, ValuationRequest
+from .schemas import AnalysisResult, CompIn, DealInput, IndicateRequest, ValuationRequest
 
 app = FastAPI(title="Ardhi Analytics", version="0.1.0",
               description="Real estate finance & investment analysis — Tanzania-first.")
@@ -100,6 +100,44 @@ def delete_deal(deal_id: str) -> dict:
     if not store.delete_deal(deal_id):
         raise HTTPException(status_code=404, detail="deal not found")
     return {"deleted": deal_id}
+
+
+@app.post("/api/comps")
+def add_comp(comp: CompIn) -> dict:
+    return comps.add_comp(comp.model_dump())
+
+
+@app.get("/api/comps")
+def list_comps(kind: str | None = None, use: str | None = None,
+               region: str | None = None, district: str | None = None,
+               since: str | None = None, limit: int = 100) -> list[dict]:
+    return comps.list_comps({"kind": kind, "use": use, "region": region,
+                             "district": district, "since": since}, limit)
+
+
+@app.get("/api/comps/stats")
+def comp_stats(kind: str | None = None, use: str | None = None,
+               region: str | None = None, district: str | None = None,
+               since: str | None = None) -> dict:
+    return comps.stats({"kind": kind, "use": use, "region": region,
+                        "district": district, "since": since})
+
+
+@app.post("/api/comps/indicate")
+def indicate(req: IndicateRequest) -> dict:
+    filters = {"kind": req.kind, "use": req.use, "region": req.region,
+               "district": req.district, "since": req.since}
+    try:
+        return comps.indicate_value(req.area_sqm, filters)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+
+@app.delete("/api/comps/{comp_id}")
+def delete_comp(comp_id: str) -> dict:
+    if not comps.delete_comp(comp_id):
+        raise HTTPException(status_code=404, detail="comparable not found")
+    return {"deleted": comp_id}
 
 
 @app.post("/api/report")
