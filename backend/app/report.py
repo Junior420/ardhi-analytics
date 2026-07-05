@@ -160,6 +160,25 @@ def build_pdf(r: AnalysisResult) -> bytes:
             pdf.cell(w, 6, val)
         pdf.ln()
 
+    pdf.section("Monte Carlo Simulation")
+    try:
+        mc = insights.simulate(r.deal, n=500, seed=42)
+        pdf.kv("Draws", f"{mc['n_effective']} effective of {mc['n']} (seed 42)")
+        pdf.kv("Median IRR", _pct(mc["irr"]["median"]))
+        pdf.kv("90% IRR interval (p5-p95)", f"{_pct(mc['irr']['p5'])} to {_pct(mc['irr']['p95'])}")
+        pdf.kv("Probability IRR < 0", _pct(mc["irr"]["prob_below_zero"]))
+        pdf.kv("Probability NPV < 0", _pct(mc["npv"]["prob_below_zero"]))
+        pdf.kv("Probability equity multiple < 1x", _pct(mc["equity_multiple"]["prob_below_one"]))
+        pdf.set_font("Helvetica", "I", 7)
+        pdf.set_text_color(*MUTED)
+        pdf.multi_cell(0, 4, _txt("Gaussian shocks on rent level/growth, vacancy, expenses, "
+                                  "exit cap rate and loan rate; deterministic for the stated seed."),
+                       new_x="LMARGIN", new_y="NEXT")
+        pdf.set_text_color(*INK)
+    except Exception:
+        pdf.set_font("Helvetica", "I", 8)
+        pdf.cell(0, 5, "Simulation unavailable for these inputs.", new_x="LMARGIN", new_y="NEXT")
+
     try:
         snapshot = market_snapshot(r.deal.jurisdiction)
     except Exception:

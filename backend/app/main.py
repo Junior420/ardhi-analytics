@@ -22,7 +22,8 @@ from . import auth, comps, insights, rulepack, store
 from .analysis import analyze
 from .report import build_pdf
 from .schemas import (
-    AnalysisResult, CompIn, Credentials, DealInput, IndicateRequest, ValuationRequest,
+    AnalysisResult, CompIn, Credentials, DealInput, IndicateRequest,
+    MonteCarloRequest, ValuationRequest,
 )
 
 app = FastAPI(title="Ardhi Analytics", version="0.1.0",
@@ -94,6 +95,14 @@ def scenarios(deal: DealInput) -> dict:
 def sensitivity(deal: DealInput) -> dict:
     try:
         return insights.sensitivity(deal)
+    except (ValueError, FileNotFoundError) as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+
+@app.post("/api/montecarlo")
+def montecarlo(req: MonteCarloRequest) -> dict:
+    try:
+        return insights.simulate(req.deal, n=req.n, seed=req.seed)
     except (ValueError, FileNotFoundError) as e:
         raise HTTPException(status_code=422, detail=str(e))
 

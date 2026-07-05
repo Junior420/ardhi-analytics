@@ -376,3 +376,51 @@ document.getElementById("logoutBtn").addEventListener("click", () => {
   refreshSavedDeals().catch(() => {});
 });
 renderAuthState();
+
+document.getElementById("mcBtn").addEventListener("click", async () => {
+  errBox.textContent = "";
+  const btn = document.getElementById("mcBtn");
+  btn.disabled = true;
+  btn.textContent = "Simulating…";
+  try {
+    const res = await fetch("/api/montecarlo", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ deal: collectDeal(), n: 1000 }),
+    });
+    if (!res.ok) {
+      const b = await res.json().catch(() => ({}));
+      throw new Error(typeof b.detail === "string" ? b.detail : "simulation failed");
+    }
+    const mc = await res.json();
+    document.getElementById("mcTiles").innerHTML = [
+      tile("Median IRR", pctFmt(mc.irr.median)),
+      tile("90% interval", `${pctFmt(mc.irr.p5)} – ${pctFmt(mc.irr.p95)}`),
+      tile("P(IRR < 0)", pctFmt(mc.irr.prob_below_zero)),
+      tile("P(NPV < 0)", pctFmt(mc.npv.prob_below_zero)),
+      tile("P(equity multiple < 1x)", pctFmt(mc.equity_multiple.prob_below_one)),
+      tile("Median NPV", fmt(mc.npv.median)),
+    ].join("");
+
+    const total = mc.histogram.counts.reduce((a, b) => a + b, 0);
+    const max = Math.max(...mc.histogram.counts);
+    document.getElementById("mcBars").innerHTML = mc.histogram.counts.map((c, i) => {
+      const lo = mc.histogram.bin_edges[i], hi = mc.histogram.bin_edges[i + 1];
+      const share = ((c / total) * 100).toFixed(1);
+      return `<div title="IRR ${pctFmt(lo)} to ${pctFmt(hi)}: ${c} draws (${share}%)"` +
+        ` style="flex:1; min-width:4px; height:${max ? Math.round((c / max) * 100) : 0}%;` +
+        ` background:#0d8a6a; border-radius:4px 4px 0 0"></div>`;
+    }).join("");
+    document.getElementById("mcLo").textContent = pctFmt(mc.histogram.bin_edges[0]);
+    document.getElementById("mcMid").textContent = "median " + pctFmt(mc.irr.median);
+    document.getElementById("mcHi").textContent = pctFmt(mc.histogram.bin_edges.at(-1));
+    document.getElementById("mcChart").style.display = "";
+    document.getElementById("mcNote").textContent =
+      `${mc.n_effective} of ${mc.n} draws produced a defined IRR (base case ${pctFmt(mc.base_irr)}). ` +
+      "Gaussian shocks on rent, growth, vacancy, expenses, exit cap and loan rate. Hover bars for detail.";
+  } catch (err) {
+    errBox.textContent = err.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Run simulation (1,000 draws)";
+  }
+});

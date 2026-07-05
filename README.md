@@ -35,7 +35,12 @@ Enter a rental/commercial property deal → one click →
   comp contributions are attributed to the signed-in user, comp deletion is
   admin-only; analysis endpoints stay public. Set `ARDHI_JWT_SECRET` in
   production (dev uses a per-process random secret).
-- Simple web UI (no build step; account, live market data + comparables cards)
+- Monte Carlo simulation (`/api/montecarlo`): Gaussian shocks on rent,
+  growth, vacancy, expenses, exit cap and loan rate; seedable/deterministic;
+  returns IRR/NPV/equity-multiple distributions, downside probabilities
+  (P(IRR<0), P(NPV<0), P(EM<1x)) and a histogram — ~0.4s for 1,000 draws
+- Simple web UI (no build step; account, live market data, comparables,
+  and Monte Carlo histogram cards)
 
 ## Run it
 
@@ -80,5 +85,5 @@ backend/
 
 ## Next (from the blueprint)
 
-Remaining Phase 1: report templates for valuers and banks, Monte Carlo
-simulation, Swahili localization.
+Remaining Phase 1: report templates for valuers and banks, Swahili
+localization.

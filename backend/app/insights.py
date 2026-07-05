@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from finance_core import (
-    Comparable, dcf_value, direct_capitalization, reconcile_approaches,
-    run_scenarios, sales_comparison, tornado, two_way_grid,
+    Comparable, dcf_value, direct_capitalization, monte_carlo,
+    reconcile_approaches, run_scenarios, sales_comparison, tornado, two_way_grid,
 )
 
 from .analysis import to_assumptions
@@ -68,3 +68,8 @@ def valuation(req: ValuationRequest) -> dict:
     return {**reconciled, "detail": detail,
             "note": "Opinion-of-value inputs only; statutory valuations require "
                     "a registered valuer under the Valuation and Valuers Registration Act, 2016."}
+
+
+def simulate(deal: DealInput, n: int = 1000, seed: int | None = None) -> dict:
+    a, _ = to_assumptions(deal)
+    return monte_carlo(a, n=n, seed=seed)

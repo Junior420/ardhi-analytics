@@ -83,6 +83,12 @@ class IndicateRequest(BaseModel):
     since: Optional[str] = None
 
 
+class MonteCarloRequest(BaseModel):
+    deal: DealInput
+    n: int = Field(1000, ge=100, le=5000)
+    seed: Optional[int] = None
+
+
 class YearRowOut(BaseModel):
     year: int
     gross_potential_income: float

@@ -164,6 +164,16 @@
       <div class="card" style="margin-top:16px"><h2>Scenarios</h2><div class="scroll"><table id="scenTable"></table></div></div>
       <div class="card" style="margin-top:16px"><h2>Sensitivity — IRR drivers</h2><div class="scroll"><table id="tornTable"></table></div>
         <h2 style="margin-top:14px">IRR: exit cap rate × rent growth</h2><div class="scroll"><table id="gridTable"></table></div></div>
+      <div class="card" style="margin-top:16px"><h2>Monte Carlo — IRR distribution</h2>
+        <button type="button" class="secondary" style="margin-top:0" id="mcBtn">Run simulation (1,000 draws)</button>
+        <div class="tiles" id="mcTiles" style="margin-top:12px"></div>
+        <div id="mcChart" style="display:none; margin-top:14px">
+          <div id="mcBars" style="display:flex; align-items:flex-end; gap:2px; height:120px; border-bottom:1px solid var(--line)"></div>
+          <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-top:4px">
+            <span id="mcLo"></span><span id="mcMid"></span><span id="mcHi"></span>
+          </div>
+        </div>
+        <div class="disclaimer" id="mcNote"></div></div>
       <div class="card" style="margin-top:16px"><h2>Exit &amp; taxes (draft Tanzania rule pack)</h2><div class="tiles" id="exitTiles"></div></div>
       <div class="card" style="margin-top:16px"><h2>Compliance checklist</h2><ul id="flags"></ul>
         <h2 style="margin-top:14px">Transfer procedure</h2><ul id="steps"></ul>
