@@ -1,0 +1,34 @@
+# Curated reference data — LAST-RESORT fallback when live + cache both fail,
+# and the only source for series with no public API (BOT policy rate, local
+# mortgage pricing). Every value is a dated, human-entered estimate that must
+# be reviewed periodically. status: draft — verify before reliance.
+
+tz:
+  policy_rate:
+    value: 0.06
+    unit: fraction
+    as_of: "2026-01"
+    source: "Bank of Tanzania — Central Bank Rate (manually curated reference)"
+    source_url: "https://www.bot.go.tz"
+    note: "Draft reference value; confirm current CBR at bot.go.tz."
+  mortgage_rate_typical:
+    value: 0.15
+    unit: fraction
+    as_of: "2025"
+    source: "Tanzania Mortgage Refinance Company market reports (curated reference)"
+    source_url: "https://www.tmrc.co.tz"
+    note: "Typical residential mortgage rate; market range roughly 13-19%. Draft."
+  inflation_cpi_yoy:
+    value: 0.033
+    unit: fraction
+    as_of: "2025"
+    source: "NBS CPI (curated reference)"
+    source_url: "https://www.nbs.go.tz"
+    note: "Fallback only; live value normally comes from the World Bank API."
+  usd_tzs:
+    value: 2600.0
+    unit: TZS_per_USD
+    as_of: "2026-06"
+    source: "Bank of Tanzania indicative rate (curated reference)"
+    source_url: "https://www.bot.go.tz"
+    note: "Fallback only; live value normally comes from the FX API."

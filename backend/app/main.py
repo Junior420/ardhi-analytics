@@ -11,6 +11,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 
+from connectors import market_snapshot
+
 from . import insights, rulepack, store
 from .analysis import analyze
 from .report import build_pdf
@@ -25,6 +27,14 @@ STATIC_DIR = Path(__file__).resolve().parent / "static"
 @app.get("/api/health")
 def health() -> dict:
     return {"status": "ok", "service": "ardhi", "version": app.version}
+
+
+@app.get("/api/market/{jurisdiction}")
+def market(jurisdiction: str) -> dict:
+    try:
+        return market_snapshot(jurisdiction)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @app.get("/api/rulepack/{jurisdiction}")

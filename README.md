@@ -21,7 +21,11 @@ Enter a rental/commercial property deal → one click →
 - Valuation engine: income approach (direct cap + DCF) and sales comparison
   with adjustment grids and cross-approach reconciliation (`/api/valuation`)
 - Saved deals (SQLite, `/api/deals` CRUD)
-- Simple web UI (no build step)
+- Live market data layer (`/api/market/tz`): World Bank (inflation, GDP
+  growth, lending rate) and daily FX, with provenance stamps, a 6-hour cache,
+  staleness flags, and curated reference fallback so the app degrades
+  gracefully offline
+- Simple web UI (no build step, includes live market data card)
 
 ## Run it
 
@@ -66,6 +70,6 @@ backend/
 
 ## Next (from the blueprint)
 
-Remaining Phase 1: BOT/NBS live data connectors, comparables database with
+Remaining Phase 1: comparables database with
 contribution workflow, auth & multi-user, report templates for valuers and
 banks, Monte Carlo simulation, Swahili localization.

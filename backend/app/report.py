@@ -6,8 +6,18 @@ from datetime import date
 
 from fpdf import FPDF
 
+from connectors import market_snapshot
+
 from . import insights
 from .schemas import AnalysisResult
+
+_MARKET_LABELS = {
+    "inflation_cpi_yoy": "Inflation (CPI, y/y)",
+    "gdp_growth": "GDP growth",
+    "lending_rate": "Lending interest rate",
+    "policy_rate": "Central bank policy rate",
+    "mortgage_rate_typical": "Typical mortgage rate",
+}
 
 INK = (30, 41, 59)
 MUTED = (100, 116, 139)
@@ -149,6 +159,26 @@ def build_pdf(r: AnalysisResult) -> bytes:
                           [55, 32, 32, 32, 24]):
             pdf.cell(w, 6, val)
         pdf.ln()
+
+    try:
+        snapshot = market_snapshot(r.deal.jurisdiction)
+    except Exception:
+        snapshot = None
+    if snapshot and snapshot["series"]:
+        pdf.section("Market Context")
+        for key, point in snapshot["series"].items():
+            label = _MARKET_LABELS.get(key, key.replace("_", " "))
+            if point["unit"] == "fraction":
+                value = _pct(point["value"])
+            else:
+                value = f"{point['value']:,.2f} {point['unit'].replace('_', ' ')}"
+            tag = point["provenance"] + (", stale" if point["stale"] else "")
+            pdf.kv(label, value)
+            pdf.set_font("Helvetica", "I", 7)
+            pdf.set_text_color(*MUTED)
+            pdf.multi_cell(0, 4, _txt(f"    {point['source']} - as of {point['as_of']} ({tag})"),
+                           new_x="LMARGIN", new_y="NEXT")
+            pdf.set_text_color(*INK)
 
     pdf.section("Acquisition Costs (Tanzania draft rule pack)")
     for k, v in r.acquisition_costs.items():

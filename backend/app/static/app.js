@@ -228,3 +228,32 @@ document.getElementById("pdfBtn").addEventListener("click", async () => {
     btn.disabled = false;
   }
 });
+
+const MARKET_LABELS = {
+  inflation_cpi_yoy: "Inflation (CPI y/y)", gdp_growth: "GDP growth",
+  lending_rate: "Lending rate", policy_rate: "Policy rate (CBR)",
+  mortgage_rate_typical: "Typical mortgage rate", usd_tzs: "USD/TZS",
+};
+
+async function loadMarket() {
+  try {
+    const res = await fetch("/api/market/tz");
+    if (!res.ok) throw new Error("market data unavailable");
+    const snap = await res.json();
+    const tiles = Object.entries(snap.series).map(([key, p]) => {
+      const label = MARKET_LABELS[key] || key.replaceAll("_", " ");
+      const value = p.unit === "fraction" ? pctFmt(p.value) : p.value.toLocaleString("en-US");
+      const badge = p.provenance === "live" ? "" :
+        ` <span style="font-size:10px;color:var(--muted)">(${p.provenance}${p.stale ? ", stale" : ""})</span>`;
+      return tile(label + badge, value);
+    });
+    document.getElementById("marketTiles").innerHTML = tiles.join("");
+    document.getElementById("marketNote").textContent =
+      "Sources: " + [...new Set(Object.values(snap.series).map((p) => p.source.split(" - ")[0].split(" — ")[0]))].join("; ") +
+      ". Reference-tagged values are curated drafts — verify before reliance.";
+  } catch (e) {
+    document.getElementById("marketTiles").innerHTML =
+      '<div class="placeholder" style="padding:10px">Market data unavailable (offline)</div>';
+  }
+}
+loadMarket();
