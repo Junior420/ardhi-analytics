@@ -7,6 +7,11 @@ from typing import Literal, Optional
 from pydantic import BaseModel, Field
 
 
+class Credentials(BaseModel):
+    email: str = Field(..., min_length=5, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+    password: str = Field(..., min_length=8, max_length=200)
+
+
 class LoanInput(BaseModel):
     ltv: Optional[float] = Field(None, gt=0, lt=1, description="Loan-to-value; alternative to amount")
     amount: Optional[float] = Field(None, gt=0)

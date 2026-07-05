@@ -12,6 +12,13 @@ def isolated_db(tmp_path, monkeypatch):
     monkeypatch.setattr(store, "DB_PATH", tmp_path / "test.db")
 
 
+@pytest.fixture
+def auth_headers():
+    reg = client.post("/api/auth/register",
+                      json={"email": "comps@example.com", "password": "s3cretpass"}).json()
+    return {"Authorization": f"Bearer {reg['access_token']}"}
+
+
 def comp(**overrides):
     base = dict(kind="sale", use="residential", region="Dar es Salaam",
                 district="Kinondoni", price=400_000_000, currency="TZS",
@@ -88,8 +95,8 @@ class TestIndication:
 
 
 class TestAPI:
-    def test_crud_and_stats_flow(self):
-        created = client.post("/api/comps", json=comp()).json()
+    def test_crud_and_stats_flow(self, auth_headers):
+        created = client.post("/api/comps", json=comp(), headers=auth_headers).json()
         assert "id" in created
 
         listed = client.get("/api/comps", params={"district": "Kinondoni"}).json()
@@ -102,12 +109,12 @@ class TestAPI:
                           json={"area_sqm": 250, "kind": "sale"}).json()
         assert ind["indicated_value"] == pytest.approx(400_000_000 / 320 * 250)
 
-        assert client.delete(f"/api/comps/{created['id']}").status_code == 200
-        assert client.delete(f"/api/comps/{created['id']}").status_code == 404
+        assert client.delete(f"/api/comps/{created['id']}", headers=auth_headers).status_code == 200
+        assert client.delete(f"/api/comps/{created['id']}", headers=auth_headers).status_code == 404
 
-    def test_validation(self):
-        assert client.post("/api/comps", json=comp(price=-5)).status_code == 422
-        assert client.post("/api/comps", json=comp(observed_date="March")).status_code == 422
+    def test_validation(self, auth_headers):
+        assert client.post("/api/comps", json=comp(price=-5), headers=auth_headers).status_code == 422
+        assert client.post("/api/comps", json=comp(observed_date="March"), headers=auth_headers).status_code == 422
 
     def test_seed_script(self):
         from scripts import seed_comps

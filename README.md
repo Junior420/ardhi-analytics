@@ -30,7 +30,12 @@ Enter a rental/commercial property deal → one click →
   dispersion-aware confidence grades, and screening value indications;
   demo seed script with clearly-labeled illustrative data
   (`python -m scripts.seed_comps`)
-- Simple web UI (no build step; live market data + comparables cards)
+- Accounts & multi-user (`/api/auth/*`): email+password with PBKDF2 hashing
+  and JWT sessions; first user becomes admin. Saved deals are owner-scoped,
+  comp contributions are attributed to the signed-in user, comp deletion is
+  admin-only; analysis endpoints stay public. Set `ARDHI_JWT_SECRET` in
+  production (dev uses a per-process random secret).
+- Simple web UI (no build step; account, live market data + comparables cards)
 
 ## Run it
 
@@ -75,5 +80,5 @@ backend/
 
 ## Next (from the blueprint)
 
-Remaining Phase 1: auth & multi-user, report templates for valuers and
-banks, Monte Carlo simulation, Swahili localization.
+Remaining Phase 1: report templates for valuers and banks, Monte Carlo
+simulation, Swahili localization.

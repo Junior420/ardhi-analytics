@@ -93,20 +93,23 @@ def test_valuation_endpoint():
 def test_deals_crud(tmp_path, monkeypatch):
     from app import store
     monkeypatch.setattr(store, "DB_PATH", tmp_path / "test.db")
+    reg = client.post("/api/auth/register",
+                      json={"email": "t@example.com", "password": "s3cretpass"}).json()
+    h = {"Authorization": f"Bearer {reg['access_token']}"}
 
-    created = client.post("/api/deals", json=DEAL).json()
+    created = client.post("/api/deals", json=DEAL, headers=h).json()
     assert created["name"] == DEAL["name"]
 
-    deals = client.get("/api/deals").json()
+    deals = client.get("/api/deals", headers=h).json()
     assert any(d["id"] == created["id"] for d in deals)
 
-    fetched = client.get(f"/api/deals/{created['id']}").json()
+    fetched = client.get(f"/api/deals/{created['id']}", headers=h).json()
     assert fetched["purchase_price"] == DEAL["purchase_price"]
     assert fetched["loan"]["ltv"] == DEAL["loan"]["ltv"]
 
-    assert client.delete(f"/api/deals/{created['id']}").status_code == 200
-    assert client.get(f"/api/deals/{created['id']}").status_code == 404
-    assert client.delete(f"/api/deals/{created['id']}").status_code == 404
+    assert client.delete(f"/api/deals/{created['id']}", headers=h).status_code == 200
+    assert client.get(f"/api/deals/{created['id']}", headers=h).status_code == 404
+    assert client.delete(f"/api/deals/{created['id']}", headers=h).status_code == 404
 
 
 def test_index_serves_ui():

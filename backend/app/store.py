@@ -1,4 +1,4 @@
-"""Saved deals — SQLite persistence (single-user Phase 1; auth comes later)."""
+"""Saved deals — SQLite persistence, owner-scoped."""
 
 from __future__ import annotations
 
@@ -19,31 +19,46 @@ def _conn() -> sqlite3.Connection:
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         created_at TEXT NOT NULL,
-        payload TEXT NOT NULL
+        payload TEXT NOT NULL,
+        owner_id TEXT NOT NULL DEFAULT ''
     )""")
+    # Migrate pre-auth databases that lack the owner column.
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(deals)")]
+    if "owner_id" not in cols:
+        conn.execute("ALTER TABLE deals ADD COLUMN owner_id TEXT NOT NULL DEFAULT ''")
     return conn
 
 
-def save_deal(deal: dict) -> dict:
+def save_deal(deal: dict, owner_id: str) -> dict:
     deal_id = str(uuid.uuid4())
     created = datetime.now(timezone.utc).isoformat()
     with _conn() as conn:
-        conn.execute("INSERT INTO deals VALUES (?, ?, ?, ?)",
-                     (deal_id, deal.get("name", "Untitled deal"), created, json.dumps(deal)))
+        conn.execute("INSERT INTO deals VALUES (?, ?, ?, ?, ?)",
+                     (deal_id, deal.get("name", "Untitled deal"), created,
+                      json.dumps(deal), owner_id))
     return {"id": deal_id, "name": deal.get("name", "Untitled deal"), "created_at": created}
 
 
-def list_deals() -> list[dict]:
+def list_deals(owner_id: Optional[str] = None) -> list[dict]:
+    """Deals for one owner; owner_id=None lists all (admin use)."""
+    sql = "SELECT id, name, created_at FROM deals"
+    params: tuple = ()
+    if owner_id is not None:
+        sql += " WHERE owner_id = ?"
+        params = (owner_id,)
     with _conn() as conn:
-        rows = conn.execute(
-            "SELECT id, name, created_at FROM deals ORDER BY created_at DESC").fetchall()
+        rows = conn.execute(sql + " ORDER BY created_at DESC", params).fetchall()
     return [{"id": r[0], "name": r[1], "created_at": r[2]} for r in rows]
 
 
 def get_deal(deal_id: str) -> Optional[dict]:
+    """Returns {"payload": ..., "owner_id": ...} or None."""
     with _conn() as conn:
-        row = conn.execute("SELECT payload FROM deals WHERE id = ?", (deal_id,)).fetchone()
-    return json.loads(row[0]) if row else None
+        row = conn.execute("SELECT payload, owner_id FROM deals WHERE id = ?",
+                           (deal_id,)).fetchone()
+    if row is None:
+        return None
+    return {"payload": json.loads(row[0]), "owner_id": row[1]}
 
 
 def delete_deal(deal_id: str) -> bool:

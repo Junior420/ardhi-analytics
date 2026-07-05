@@ -1,3 +1,8 @@
+function authHeaders() {
+  const t = localStorage.getItem("ardhi_token");
+  return t ? { Authorization: "Bearer " + t } : {};
+}
+
 const form = document.getElementById("dealForm");
 const errBox = document.getElementById("error");
 const pctFields = ["vacancy_rate", "rent_growth", "expense_growth", "exit_cap_rate",
@@ -100,7 +105,7 @@ async function post(path) {
   errBox.textContent = "";
   const res = await fetch(path, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify(collectDeal()),
   });
   if (!res.ok) {
@@ -160,7 +165,11 @@ form.addEventListener("submit", async (e) => {
 });
 
 async function refreshSavedDeals() {
-  const res = await fetch("/api/deals");
+  const res = await fetch("/api/deals", { headers: authHeaders() });
+  if (res.status === 401) {
+    document.getElementById("savedDeals").innerHTML = '<option value="">— sign in to save/load deals —</option>';
+    return;
+  }
   const deals = await res.json();
   const sel = document.getElementById("savedDeals");
   sel.innerHTML = '<option value="">— select a saved deal —</option>' +
@@ -203,7 +212,7 @@ document.getElementById("loadBtn").addEventListener("click", async () => {
   const id = document.getElementById("savedDeals").value;
   if (!id) return;
   try {
-    const res = await fetch(`/api/deals/${id}`);
+    const res = await fetch(`/api/deals/${id}`, { headers: authHeaders() });
     if (!res.ok) throw new Error("could not load deal");
     fillForm(await res.json());
   } catch (err) { errBox.textContent = err.message; }
@@ -292,8 +301,9 @@ document.getElementById("addCompBtn").addEventListener("click", async () => {
     contributor: "web-ui",
   };
   const res = await fetch("/api/comps", {
-    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+    method: "POST", headers: { "Content-Type": "application/json", ...authHeaders() }, body: JSON.stringify(body),
   });
+  if (res.status === 401) { errBox.textContent = "Sign in (Account section) to contribute comparables."; return; }
   if (!res.ok) {
     const b = await res.json().catch(() => ({}));
     errBox.textContent = typeof b.detail === "string" ? b.detail : JSON.stringify(b.detail || "invalid comp");
@@ -329,3 +339,40 @@ document.getElementById("indicateBtn").addEventListener("click", async () => {
     document.getElementById("compNote").textContent = out.note;
   }
 });
+
+function renderAuthState() {
+  const email = localStorage.getItem("ardhi_email");
+  document.getElementById("authForms").style.display = email ? "none" : "";
+  document.getElementById("authStatus").style.display = email ? "" : "none";
+  if (email) document.getElementById("authWho").textContent = email;
+}
+
+async function authCall(path) {
+  errBox.textContent = "";
+  const res = await fetch(path, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: document.getElementById("authEmail").value,
+      password: document.getElementById("authPassword").value,
+    }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    errBox.textContent = typeof body.detail === "string" ? body.detail : "authentication failed";
+    return;
+  }
+  localStorage.setItem("ardhi_token", body.access_token);
+  localStorage.setItem("ardhi_email", body.user.email);
+  renderAuthState();
+  refreshSavedDeals().catch(() => {});
+}
+
+document.getElementById("loginBtn").addEventListener("click", () => authCall("/api/auth/login"));
+document.getElementById("registerBtn").addEventListener("click", () => authCall("/api/auth/register"));
+document.getElementById("logoutBtn").addEventListener("click", () => {
+  localStorage.removeItem("ardhi_token");
+  localStorage.removeItem("ardhi_email");
+  renderAuthState();
+  refreshSavedDeals().catch(() => {});
+});
+renderAuthState();

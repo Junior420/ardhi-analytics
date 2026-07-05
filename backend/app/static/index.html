@@ -102,6 +102,21 @@
     <div class="check"><input type="checkbox" id="isCrowdfunded"><label for="isCrowdfunded" style="margin:0">Crowdfunded offering</label></div>
     <button type="submit" id="analyzeBtn">Analyze deal</button>
     <button type="button" class="secondary" id="pdfBtn">Download PDF report</button>
+    <h2 style="margin-top:20px">Account</h2>
+    <div id="authForms">
+      <div class="row">
+        <div><label>Email</label><input id="authEmail" type="email" placeholder="you@example.com"></div>
+        <div><label>Password (8+ chars)</label><input id="authPassword" type="password"></div>
+      </div>
+      <div class="row">
+        <button type="button" class="secondary" style="margin-top:10px" id="loginBtn">Sign in</button>
+        <button type="button" class="secondary" style="margin-top:10px" id="registerBtn">Register</button>
+      </div>
+    </div>
+    <div id="authStatus" style="display:none; font-size:13px; margin-top:8px">
+      Signed in as <b id="authWho"></b>
+      <button type="button" class="secondary" style="margin-top:8px" id="logoutBtn">Sign out</button>
+    </div>
     <h2 style="margin-top:20px">Saved deals</h2>
     <select id="savedDeals"><option value="">— select a saved deal —</option></select>
     <div class="row" style="margin-top:8px">
