@@ -424,3 +424,84 @@ document.getElementById("mcBtn").addEventListener("click", async () => {
     btn.textContent = "Run simulation (1,000 draws)";
   }
 });
+
+// ---- Swahili localization (first pass): UI chrome is translated; standard
+// financial jargon (IRR, NPV, DSCR, cap rate) stays in English, matching
+// Tanzanian professional practice.
+const SW = {
+  "Real estate finance & investment analysis — Tanzania rule pack v1 (draft)":
+    "Uchambuzi wa fedha na uwekezaji wa mali isiyohamishika — kanuni za Tanzania v1 (rasimu)",
+  "Deal inputs": "Taarifa za mradi",
+  "Deal name": "Jina la mradi",
+  "Use": "Matumizi", "Residential": "Makazi", "Commercial": "Biashara",
+  "Tenure": "Umiliki",
+  "Granted right of occupancy": "Hati ya umiliki (granted)",
+  "Customary / village land": "Ardhi ya kimila / kijiji",
+  "TIC derivative right": "Haki tegemezi ya TIC",
+  "Other": "Nyingine",
+  "Purchase price (TZS)": "Bei ya ununuzi (TZS)",
+  "Gross annual rent (TZS)": "Kodi ya mwaka, jumla (TZS)",
+  "Vacancy rate %": "Kiwango cha nafasi wazi %",
+  "Annual opex (TZS)": "Gharama za uendeshaji kwa mwaka (TZS)",
+  "Rent growth %/yr": "Ukuaji wa kodi %/mwaka",
+  "Expense growth %/yr": "Ukuaji wa gharama %/mwaka",
+  "Hold period (years)": "Muda wa kushikilia (miaka)",
+  "Selling costs %": "Gharama za mauzo %",
+  "Finance with a mortgage": "Nunua kwa mkopo wa nyumba",
+  "Interest rate %/yr": "Riba %/mwaka",
+  "Term (years)": "Muda wa mkopo (miaka)",
+  "Interest-only (years)": "Riba pekee (miaka)",
+  "Buyer is a Tanzanian resident": "Mnunuzi ni mkazi wa Tanzania",
+  "Crowdfunded offering": "Uwekezaji wa umati (crowdfunding)",
+  "Analyze deal": "Chambua mradi",
+  "Report template": "Aina ya ripoti",
+  "Investor appraisal": "Tathmini ya mwekezaji",
+  "Bank collateral report": "Ripoti ya dhamana ya benki",
+  "Valuer workpaper (IVS)": "Karatasi ya mthamini (IVS)",
+  "Download PDF": "Pakua PDF",
+  "Account": "Akaunti",
+  "Email": "Barua pepe",
+  "Password (8+ chars)": "Nenosiri (herufi 8+)",
+  "Sign in": "Ingia", "Register": "Jisajili", "Sign out": "Toka",
+  "Saved deals": "Miradi iliyohifadhiwa",
+  "Save current": "Hifadhi", "Load selected": "Fungua",
+  "Market data — Tanzania": "Takwimu za soko — Tanzania",
+  "Comparables database": "Hifadhidata ya mauzo linganifu",
+  "Kind": "Aina", "Sale": "Mauzo", "Rent (annual)": "Kodi (mwaka)",
+  "Land": "Ardhi",
+  "Region": "Mkoa", "District": "Wilaya",
+  "Price (TZS)": "Bei (TZS)", "Area (m²)": "Eneo (m²)",
+  "Observed (YYYY-MM)": "Tarehe (YYYY-MM)", "Source": "Chanzo",
+  "Contribute comp": "Changia data", "Market stats": "Takwimu za soko",
+  "Subject area (m²) for indication": "Eneo la mali (m²) kwa makadirio",
+  "Indicate value": "Kadiria thamani",
+  "Key metrics": "Vipimo muhimu",
+  "Cash flow projection": "Makadirio ya mtiririko wa fedha",
+  "Scenarios": "Mazingira",
+  "Sensitivity — IRR drivers": "Usikivu — vichocheo vya IRR",
+  "Monte Carlo — IRR distribution": "Monte Carlo — mgawanyo wa IRR",
+  "Run simulation (1,000 draws)": "Endesha uigaji (mizunguko 1,000)",
+  "Exit & taxes (draft Tanzania rule pack)": "Mauzo ya mwisho na kodi (kanuni za Tanzania, rasimu)",
+  "Compliance checklist": "Orodha ya uzingatiaji wa sheria",
+  "Transfer procedure": "Utaratibu wa uhamisho",
+  "Exit cap rate %": "Exit cap rate %",
+  "Discount rate %": "Discount rate %",
+  "LTV %": "LTV %",
+};
+
+function applyLang(lang) {
+  document.querySelectorAll("h2, label, button, option, p, span").forEach((el) => {
+    if (el.children.length > 0 || el.id === "langBtn") return;
+    if (el.dataset.orig === undefined) el.dataset.orig = el.textContent.trim();
+    const orig = el.dataset.orig;
+    if (lang === "sw" && SW[orig]) el.textContent = SW[orig];
+    else if (lang === "en") el.textContent = orig;
+  });
+  document.getElementById("langBtn").textContent = lang === "sw" ? "English" : "Kiswahili";
+  localStorage.setItem("ardhi_lang", lang);
+}
+
+document.getElementById("langBtn").addEventListener("click", () => {
+  applyLang(localStorage.getItem("ardhi_lang") === "sw" ? "en" : "sw");
+});
+if (localStorage.getItem("ardhi_lang") === "sw") applyLang("sw");

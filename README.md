@@ -45,7 +45,9 @@ Enter a rental/commercial property deal → one click →
   returns IRR/NPV/equity-multiple distributions, downside probabilities
   (P(IRR<0), P(NPV<0), P(EM<1x)) and a histogram — ~0.4s for 1,000 draws
 - Simple web UI (no build step; account, live market data, comparables,
-  and Monte Carlo histogram cards)
+  and Monte Carlo histogram cards) with an English/Kiswahili toggle —
+  UI chrome is translated; standard financial jargon (IRR, NPV, DSCR)
+  stays in English per Tanzanian professional practice
 
 ## Run it
 
@@ -90,4 +92,7 @@ backend/
 
 ## Next (from the blueprint)
 
-Remaining Phase 1: Swahili localization.
+Phase 1 is complete. Phase 2+: deployment, AI narrative layer (Claude API,
+grounded in computed numbers), listing scrapers/partner data feeds, AVM,
+portfolio tracking with alerts, and — after CMSA legal structuring — the
+crowdfunding module.
