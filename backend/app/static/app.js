@@ -224,11 +224,11 @@ document.getElementById("pdfBtn").addEventListener("click", async () => {
   const btn = document.getElementById("pdfBtn");
   btn.disabled = true;
   try {
-    const res = await post("/api/report");
+    const res = await post("/api/report?template=" + document.getElementById("pdfTemplate").value);
     const blob = await res.blob();
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = (collectDeal().name || "deal").replace(/\s+/g, "_") + "_appraisal.pdf";
+    a.download = (collectDeal().name || "deal").replace(/\s+/g, "_") + "_" + document.getElementById("pdfTemplate").value + ".pdf";
     a.click();
     URL.revokeObjectURL(a.href);
   } catch (err) {

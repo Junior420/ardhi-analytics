@@ -15,7 +15,12 @@ Enter a rental/commercial property deal → one click →
 - Tanzania rule pack v1 (draft): stamp duty, CGT single instalment,
   rent withholding tax, transfer procedure checklist, tenure/foreign-buyer
   compliance flags
-- One-click PDF investment appraisal report (with scenario & sensitivity sections)
+- One-click PDF reports in three templates (`/api/report?template=...`):
+  investor appraisal (metrics, projections, scenarios, sensitivity, Monte
+  Carlo, market context), bank collateral report (LTV/DSCR/debt yield,
+  amortization profile, stressed serviceability, year-by-year DSCR), and
+  an IVS-aligned valuer workpaper (basis of value, income approaches,
+  disclosed assumptions, certification block)
 - Scenario comparison (pessimistic / base / optimistic) and one-way + two-way
   sensitivity analysis (`/api/scenarios`, `/api/sensitivity`)
 - Valuation engine: income approach (direct cap + DCF) and sales comparison
@@ -85,5 +90,4 @@ backend/
 
 ## Next (from the blueprint)
 
-Remaining Phase 1: report templates for valuers and banks, Swahili
-localization.
+Remaining Phase 1: Swahili localization.

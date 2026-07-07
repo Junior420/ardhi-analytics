@@ -188,13 +188,13 @@ def delete_comp(comp_id: str, user: dict = Depends(auth.current_user)) -> dict:
 
 
 @app.post("/api/report")
-def report(deal: DealInput) -> Response:
+def report(deal: DealInput, template: str = "investor") -> Response:
     try:
         result = analyze(deal)
+        pdf = build_pdf(result, template=template)
     except (ValueError, FileNotFoundError) as e:
         raise HTTPException(status_code=422, detail=str(e))
-    pdf = build_pdf(result)
-    filename = f"{deal.name.replace(' ', '_') or 'deal'}_appraisal.pdf"
+    filename = f"{deal.name.replace(' ', '_') or 'deal'}_{template}.pdf"
     return Response(content=pdf, media_type="application/pdf",
                     headers={"Content-Disposition": f'attachment; filename="{filename}"'})
 

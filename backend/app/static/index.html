@@ -101,7 +101,15 @@
     <div class="check"><input type="checkbox" id="buyerResident" checked><label for="buyerResident" style="margin:0">Buyer is a Tanzanian resident</label></div>
     <div class="check"><input type="checkbox" id="isCrowdfunded"><label for="isCrowdfunded" style="margin:0">Crowdfunded offering</label></div>
     <button type="submit" id="analyzeBtn">Analyze deal</button>
-    <button type="button" class="secondary" id="pdfBtn">Download PDF report</button>
+    <div class="row" style="margin-top:10px">
+      <div><label>Report template</label>
+        <select id="pdfTemplate">
+          <option value="investor">Investor appraisal</option>
+          <option value="bank">Bank collateral report</option>
+          <option value="valuer">Valuer workpaper (IVS)</option>
+        </select></div>
+      <button type="button" class="secondary" style="margin-top:22px" id="pdfBtn">Download PDF</button>
+    </div>
     <h2 style="margin-top:20px">Account</h2>
     <div id="authForms">
       <div class="row">
