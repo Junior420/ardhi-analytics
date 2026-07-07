@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-DB_PATH = Path(__file__).resolve().parent.parent / "data" / "ardhi.db"
+_DATA_DIR = Path(os.environ.get("ARDHI_DATA_DIR",
+                                Path(__file__).resolve().parent.parent / "data"))
+DB_PATH = _DATA_DIR / "ardhi.db"
 
 
 def _conn() -> sqlite3.Connection:

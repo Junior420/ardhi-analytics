@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 import time
 from dataclasses import asdict, dataclass
@@ -12,7 +13,8 @@ from typing import Optional
 
 import httpx
 
-CACHE_PATH = Path(__file__).resolve().parent.parent / "data" / "market_cache.db"
+CACHE_PATH = Path(os.environ.get("ARDHI_DATA_DIR",
+                                 Path(__file__).resolve().parent.parent / "data")) / "market_cache.db"
 DEFAULT_TTL_SECONDS = 6 * 3600
 
 

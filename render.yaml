@@ -1,0 +1,19 @@
+# Render blueprint — deploy with "New > Blueprint" pointing at this repo.
+# Uses a persistent disk for the SQLite databases (deals, users, comps,
+# market cache). Move to managed PostgreSQL when usage grows.
+
+services:
+  - type: web
+    name: ardhi-analytics
+    runtime: docker
+    plan: starter
+    healthCheckPath: /api/health
+    envVars:
+      - key: ARDHI_JWT_SECRET
+        generateValue: true          # stable random secret; tokens survive restarts
+      - key: ARDHI_DATA_DIR
+        value: /data
+    disk:
+      name: ardhi-data
+      mountPath: /data
+      sizeGB: 1

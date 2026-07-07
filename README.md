@@ -59,6 +59,22 @@ uvicorn app.main:app --reload
 # open http://127.0.0.1:8000
 ```
 
+## Deploy it
+
+The repo ships a `Dockerfile` and a Render blueprint (`render.yaml`):
+
+1. On [Render](https://render.com): **New > Blueprint**, point it at this
+   repository. The blueprint provisions a web service with a 1 GB persistent
+   disk mounted at `/data` (SQLite lives there) and a generated
+   `ARDHI_JWT_SECRET`.
+2. Any Docker host works too:
+   `docker build -t ardhi . && docker run -p 8000:8000 -v ardhi-data:/data -e ARDHI_JWT_SECRET=<secret> ardhi`
+
+Environment variables: `ARDHI_JWT_SECRET` (required in production),
+`ARDHI_DATA_DIR` (defaults to `backend/data` locally, `/data` in the image),
+`PORT` (injected by the platform). Health check: `GET /api/health`.
+CI (GitHub Actions) runs the full test suite on every push and PR.
+
 ## Test it
 
 ```bash
