@@ -70,6 +70,23 @@ The repo ships a `Dockerfile` and a Render blueprint (`render.yaml`):
 2. Any Docker host works too:
    `docker build -t ardhi . && docker run -p 8000:8000 -v ardhi-data:/data -e ARDHI_JWT_SECRET=<secret> ardhi`
 
+### Cloudflare (Containers)
+
+The repo also ships a Cloudflare Containers setup (`wrangler.jsonc` +
+`cloudflare/index.mjs`). Requires the Workers Paid plan ($5/mo) and Docker
+running locally to build the image:
+
+```bash
+npm install
+npx wrangler login
+npx wrangler secret put ARDHI_JWT_SECRET   # paste a long random string
+npx wrangler deploy
+```
+
+**Caveat:** container disks are ephemeral - SQLite data resets when the
+container sleeps or redeploys. Use Render (above) for durable data, or ask
+for the D1 storage migration to make Cloudflare fully persistent.
+
 Environment variables: `ARDHI_JWT_SECRET` (required in production),
 `ARDHI_DATA_DIR` (defaults to `backend/data` locally, `/data` in the image),
 `PORT` (injected by the platform). Health check: `GET /api/health`.

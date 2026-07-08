@@ -1,0 +1,14 @@
+{
+  "name": "ardhi-analytics",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "cf-dev": "wrangler dev"
+  },
+  "dependencies": {
+    "@cloudflare/containers": "^0.0.28"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
