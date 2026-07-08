@@ -8,11 +8,14 @@ as strong.
 
 from __future__ import annotations
 
-import sqlite3
 import statistics
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
+
+from sqlalchemy import text
+
+from dbcore import engine_for
 
 from . import store
 
@@ -33,56 +36,56 @@ _SCHEMA = """CREATE TABLE IF NOT EXISTS comparables (
 )"""
 
 
-def _conn() -> sqlite3.Connection:
-    store.DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(store.DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.execute(_SCHEMA)
-    return conn
+def _engine():
+    engine = engine_for(store.DB_PATH)
+    with engine.begin() as conn:
+        conn.execute(text(_SCHEMA))
+    return engine
 
 
 def add_comp(rec: dict) -> dict:
     rec = dict(rec)
     rec["id"] = str(uuid.uuid4())
     rec["created_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
-    with _conn() as conn:
-        conn.execute(
+    with _engine().begin() as conn:
+        conn.execute(text(
             """INSERT INTO comparables
                (id, kind, use, region, district, price, currency, area_sqm,
                 observed_date, source, contributor, notes, created_at)
                VALUES (:id, :kind, :use, :region, :district, :price, :currency,
                        :area_sqm, :observed_date, :source, :contributor, :notes,
-                       :created_at)""", rec)
+                       :created_at)"""), rec)
     return rec
 
 
-def _where(filters: dict) -> tuple[str, list]:
-    clauses, params = [], []
+def _where(filters: dict) -> tuple[str, dict]:
+    clauses, params = [], {}
     for field in ("kind", "use", "region", "district"):
         if filters.get(field):
             # region/district match case-insensitively; kind/use are enums
-            clauses.append(f"LOWER({field}) = LOWER(?)")
-            params.append(filters[field])
+            clauses.append(f"LOWER({field}) = LOWER(:{field})")
+            params[field] = filters[field]
     if filters.get("since"):
-        clauses.append("observed_date >= ?")
-        params.append(filters["since"])
+        clauses.append("observed_date >= :since")
+        params["since"] = filters["since"]
     sql = (" WHERE " + " AND ".join(clauses)) if clauses else ""
     return sql, params
 
 
 def list_comps(filters: dict, limit: int = 100) -> list[dict]:
     sql, params = _where(filters)
-    with _conn() as conn:
-        rows = conn.execute(
-            f"SELECT * FROM comparables{sql} ORDER BY observed_date DESC LIMIT ?",
-            params + [min(limit, 500)]).fetchall()
+    params["_limit"] = min(limit, 500)
+    with _engine().connect() as conn:
+        rows = conn.execute(text(
+            f"SELECT * FROM comparables{sql} ORDER BY observed_date DESC LIMIT :_limit"),
+            params).mappings().all()
     return [dict(r) for r in rows]
 
 
 def delete_comp(comp_id: str) -> bool:
-    with _conn() as conn:
-        cur = conn.execute("DELETE FROM comparables WHERE id = ?", (comp_id,))
-    return cur.rowcount > 0
+    with _engine().begin() as conn:
+        result = conn.execute(text("DELETE FROM comparables WHERE id = :id"), {"id": comp_id})
+    return result.rowcount > 0
 
 
 def _confidence(n: int, rel_dispersion: Optional[float], spread: Optional[float]) -> str:

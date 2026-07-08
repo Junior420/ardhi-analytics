@@ -14,6 +14,9 @@ export class ArdhiContainer extends Container {
     this.envVars = {
       ARDHI_JWT_SECRET: env.ARDHI_JWT_SECRET ?? "",
       ARDHI_DATA_DIR: "/data",
+      // Set via `wrangler secret put DATABASE_URL` (Supabase) to make data
+      // durable — otherwise SQLite on the ephemeral container disk is used.
+      DATABASE_URL: env.DATABASE_URL ?? "",
     };
   }
 }

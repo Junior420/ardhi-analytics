@@ -13,6 +13,8 @@ services:
         generateValue: true          # stable random secret; tokens survive restarts
       - key: ARDHI_DATA_DIR
         value: /data
+      - key: DATABASE_URL            # paste a Supabase/Postgres connection string
+        sync: false                  # to skip the disk entirely; leave empty for SQLite
     disk:
       name: ardhi-data
       mountPath: /data

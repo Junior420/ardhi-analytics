@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import os
-import sqlite3
 import time
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
@@ -12,6 +11,9 @@ from pathlib import Path
 from typing import Optional
 
 import httpx
+from sqlalchemy import text
+
+from dbcore import engine_for
 
 CACHE_PATH = Path(os.environ.get("ARDHI_DATA_DIR",
                                  Path(__file__).resolve().parent.parent / "data")) / "market_cache.db"
@@ -49,30 +51,35 @@ def fetch_json(url: str, timeout: float = 15.0) -> dict | list:
         raise FetchError(f"fetch failed for {url}: {e}") from e
 
 
-def _conn() -> sqlite3.Connection:
-    CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(CACHE_PATH)
-    conn.execute("""CREATE TABLE IF NOT EXISTS cache (
-        key TEXT PRIMARY KEY,
-        payload TEXT NOT NULL,
-        stored_at REAL NOT NULL
-    )""")
-    return conn
+_SCHEMA = """CREATE TABLE IF NOT EXISTS market_cache (
+    key TEXT PRIMARY KEY,
+    payload TEXT NOT NULL,
+    stored_at DOUBLE PRECISION NOT NULL
+)"""
+
+
+def _engine():
+    engine = engine_for(CACHE_PATH)
+    with engine.begin() as conn:
+        conn.execute(text(_SCHEMA))
+    return engine
 
 
 def cache_put(key: str, point: DataPoint) -> None:
-    with _conn() as conn:
-        conn.execute("INSERT OR REPLACE INTO cache VALUES (?, ?, ?)",
-                     (key, json.dumps(point.to_dict()), time.time()))
+    with _engine().begin() as conn:
+        conn.execute(text("DELETE FROM market_cache WHERE key = :k"), {"k": key})
+        conn.execute(text(
+            "INSERT INTO market_cache (key, payload, stored_at) VALUES (:k, :p, :t)"),
+            {"k": key, "p": json.dumps(point.to_dict()), "t": time.time()})
 
 
 def cache_get(key: str, max_age_seconds: Optional[float] = None) -> Optional[DataPoint]:
     """Return the cached point, or None. With max_age_seconds=None any age is
     accepted (used for degraded fallback); the point is flagged stale if it
     exceeds the default TTL."""
-    with _conn() as conn:
-        row = conn.execute("SELECT payload, stored_at FROM cache WHERE key = ?",
-                           (key,)).fetchone()
+    with _engine().connect() as conn:
+        row = conn.execute(text("SELECT payload, stored_at FROM market_cache WHERE key = :k"),
+                           {"k": key}).first()
     if row is None:
         return None
     payload, stored_at = json.loads(row[0]), row[1]

@@ -61,6 +61,25 @@ uvicorn app.main:app --reload
 
 ## Deploy it
 
+### Recommended: free hosting + Supabase PostgreSQL
+
+All storage runs on PostgreSQL when `DATABASE_URL` is set (SQLite remains
+the zero-config default for local dev). With Supabase's free tier this
+gives a durable production setup at $0/month:
+
+1. Create a project at https://supabase.com/dashboard (sign in with GitHub).
+2. Project Settings > Database > copy the **connection string** (URI). Use
+   the "Transaction pooler" URI if offered; either works.
+3. Give it to your host as the `DATABASE_URL` environment variable:
+   - **Render**: New > Web Service (runtime Docker, plan Free) > add env vars
+     `DATABASE_URL` and `ARDHI_JWT_SECRET`. No disk needed - the app is
+     stateless with Postgres. (The blueprint below also prompts for it.)
+   - **Cloudflare**: `npx wrangler secret put DATABASE_URL` before deploying.
+
+Tables are created automatically on first request. CI runs the full test
+suite against both SQLite and PostgreSQL 16.
+
+
 The repo ships a `Dockerfile` and a Render blueprint (`render.yaml`):
 
 1. On [Render](https://render.com): **New > Blueprint**, point it at this
