@@ -75,8 +75,8 @@ the zero-config default for local dev). With Supabase's free tier this
 gives a durable production setup at $0/month:
 
 1. Create a project at https://supabase.com/dashboard (sign in with GitHub).
-2. Project Settings > Database > copy the **connection string** (URI). Use
-   the "Transaction pooler" URI if offered; either works.
+2. Project Settings > Database > copy the **connection string** (URI).
+   Any connection mode works (see [`docs/SUPABASE.md`](docs/SUPABASE.md)).
 3. Give it to your host as the `DATABASE_URL` environment variable:
    - **Render**: New > Web Service (runtime Docker, plan Free) > add env vars
      `DATABASE_URL` and `ARDHI_JWT_SECRET`. No disk needed - the app is

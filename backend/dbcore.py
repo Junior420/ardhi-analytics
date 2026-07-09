@@ -30,7 +30,16 @@ def engine_for(sqlite_path: Path | str) -> Engine:
     env_url = os.environ.get("DATABASE_URL")
     if env_url:
         url = _normalize(env_url)
-        kwargs = {"pool_pre_ping": True}
+        # pool_pre_ping drops connections killed by the pooler; pool_recycle
+        # avoids Supabase's idle-connection timeout. prepare_threshold=None
+        # disables psycopg's prepared statements, which pgbouncer in the
+        # Supabase transaction pooler rejects ("prepared statement already
+        # exists") — safe for every Supabase connection mode.
+        kwargs = {
+            "pool_pre_ping": True,
+            "pool_recycle": 1800,
+            "connect_args": {"prepare_threshold": None},
+        }
     else:
         sqlite_path = Path(sqlite_path)
         sqlite_path.parent.mkdir(parents=True, exist_ok=True)
