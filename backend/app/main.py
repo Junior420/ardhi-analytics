@@ -18,7 +18,7 @@ from fastapi.staticfiles import StaticFiles
 
 from connectors import market_snapshot
 
-from . import auth, comps, insights, rulepack, store
+from . import auth, comps, insights, narrative, rulepack, store
 from .analysis import analyze
 from .report import build_pdf
 from .schemas import (
@@ -105,6 +105,24 @@ def montecarlo(req: MonteCarloRequest) -> dict:
         return insights.simulate(req.deal, n=req.n, seed=req.seed)
     except (ValueError, FileNotFoundError) as e:
         raise HTTPException(status_code=422, detail=str(e))
+
+
+@app.get("/api/narrative/status")
+def narrative_status() -> dict:
+    return {"available": narrative.available(), "model": narrative.MODEL}
+
+
+@app.post("/api/narrative")
+def narrative_endpoint(deal: DealInput) -> dict:
+    if not narrative.available():
+        raise HTTPException(status_code=503,
+                            detail="AI narrative not configured (set ANTHROPIC_API_KEY)")
+    try:
+        return narrative.generate(deal)
+    except (ValueError, FileNotFoundError) as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"narrative generation failed: {e}")
 
 
 @app.post("/api/valuation")

@@ -40,6 +40,13 @@ Enter a rental/commercial property deal → one click →
   comp contributions are attributed to the signed-in user, comp deletion is
   admin-only; analysis endpoints stay public. Set `ARDHI_JWT_SECRET` in
   production (dev uses a per-process random secret).
+- AI narrative layer (`/api/narrative`): Claude writes an executive summary
+  and risk commentary **grounded strictly in the computed figures** — the
+  model receives the metrics, scenarios, Monte Carlo probabilities, and
+  compliance flags as structured context and is instructed to invent no
+  numbers. Off by default; enable by setting `ANTHROPIC_API_KEY` (the UI
+  hides the card and the endpoint returns 503 when unconfigured). Model via
+  `ARDHI_NARRATIVE_MODEL` (default claude-opus-4-8).
 - Monte Carlo simulation (`/api/montecarlo`): Gaussian shocks on rent,
   growth, vacancy, expenses, exit cap and loan rate; seedable/deterministic;
   returns IRR/NPV/equity-multiple distributions, downside probabilities
@@ -144,7 +151,7 @@ backend/
 
 ## Next (from the blueprint)
 
-Phase 1 is complete. Phase 2+: deployment, AI narrative layer (Claude API,
-grounded in computed numbers), listing scrapers/partner data feeds, AVM,
-portfolio tracking with alerts, and — after CMSA legal structuring — the
-crowdfunding module.
+Phase 1 is complete; Phase 2 is underway (deployment configs and the AI
+narrative layer are in). Remaining Phase 2+: listing scrapers / partner data
+feeds, an automated valuation model (AVM), portfolio tracking with alerts,
+and — after CMSA legal structuring — the crowdfunding module.

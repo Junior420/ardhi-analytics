@@ -505,3 +505,54 @@ document.getElementById("langBtn").addEventListener("click", () => {
   applyLang(localStorage.getItem("ardhi_lang") === "sw" ? "en" : "sw");
 });
 if (localStorage.getItem("ardhi_lang") === "sw") applyLang("sw");
+
+// Minimal, safe markdown → HTML (headings, bold, bullet lists, paragraphs).
+function miniMarkdown(md) {
+  const esc = (t) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const lines = md.split("\n");
+  let html = "", inList = false;
+  const inline = (t) => esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
+  for (let raw of lines) {
+    const line = raw.trimEnd();
+    if (/^##\s+/.test(line)) {
+      if (inList) { html += "</ul>"; inList = false; }
+      html += `<h3 style="color:var(--accent); font-size:15px; margin:14px 0 6px">${inline(line.replace(/^##\s+/, ""))}</h3>`;
+    } else if (/^[-*]\s+/.test(line)) {
+      if (!inList) { html += "<ul style=\"padding-left:18px; margin:4px 0\">"; inList = true; }
+      html += `<li>${inline(line.replace(/^[-*]\s+/, ""))}</li>`;
+    } else if (line === "") {
+      if (inList) { html += "</ul>"; inList = false; }
+    } else {
+      if (inList) { html += "</ul>"; inList = false; }
+      html += `<p style="margin:6px 0">${inline(line)}</p>`;
+    }
+  }
+  if (inList) html += "</ul>";
+  return html;
+}
+
+async function initNarrative() {
+  try {
+    const st = await (await fetch("/api/narrative/status")).json();
+    if (st.available) document.getElementById("narrativeCard").style.display = "";
+  } catch (e) { /* leave hidden */ }
+}
+initNarrative();
+
+document.getElementById("narrativeBtn").addEventListener("click", async () => {
+  const btn = document.getElementById("narrativeBtn");
+  const body = document.getElementById("narrativeBody");
+  btn.disabled = true; btn.textContent = "Writing…"; body.innerHTML = "";
+  try {
+    const res = await post("/api/narrative");
+    const data = await res.json();
+    body.innerHTML = miniMarkdown(data.markdown);
+    document.getElementById("narrativeNote").textContent =
+      `${data.disclaimer} (model: ${data.model})`;
+  } catch (err) {
+    body.innerHTML = "";
+    errBox.textContent = err.message;
+  } finally {
+    btn.disabled = false; btn.textContent = "Generate written analysis";
+  }
+});
