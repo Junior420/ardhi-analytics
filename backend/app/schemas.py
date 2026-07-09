@@ -83,6 +83,13 @@ class IndicateRequest(BaseModel):
     since: Optional[str] = None
 
 
+class ActualIn(BaseModel):
+    year: int = Field(..., ge=1, le=30)
+    gross_rent_actual: float = Field(..., ge=0)
+    opex_actual: float = Field(..., ge=0)
+    note: str = ""
+
+
 class IngestJsonRequest(BaseModel):
     source: str = Field(..., min_length=2, description="Feed name, e.g. 'kupatana' or 'partner-x'")
     records: list[dict] = Field(..., min_length=1)

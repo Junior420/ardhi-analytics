@@ -25,7 +25,11 @@ Enter a rental/commercial property deal → one click →
   sensitivity analysis (`/api/scenarios`, `/api/sensitivity`)
 - Valuation engine: income approach (direct cap + DCF) and sales comparison
   with adjustment grids and cross-approach reconciliation (`/api/valuation`)
-- Saved deals (SQLite, `/api/deals` CRUD)
+- Saved deals (`/api/deals` CRUD) with a portfolio tracker (`/api/portfolio/*`,
+  owner-scoped): a live roll-up across saved deals (total equity, equity-weighted
+  IRR, portfolio DSCR, exposure by use/tenure), market-shock alerts that stress
+  every deal under a rate/rent shift and flag ones whose DSCR crosses below 1.0
+  or IRR drops below the hurdle, and actuals-vs-projections variance tracking
 - Live market data layer (`/api/market/tz`): World Bank (inflation, GDP
   growth, lending rate) and daily FX, with provenance stamps, a 6-hour cache,
   staleness flags, and curated reference fallback so the app degrades
@@ -162,5 +166,5 @@ backend/
 ## Next (from the blueprint)
 
 Phase 1 is complete; Phase 2 is underway (deployment configs and the AI
-narrative layer are in). Remaining Phase 2+: portfolio tracking with alerts,
+narrative layer are in). Remaining Phase 2+:
 and — after CMSA legal structuring — the crowdfunding module.

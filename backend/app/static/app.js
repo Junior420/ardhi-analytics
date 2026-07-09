@@ -583,3 +583,42 @@ document.getElementById("avmBtn").addEventListener("click", async () => {
     document.getElementById("compNote").textContent = out.note;
   }
 });
+
+async function refreshPortfolio() {
+  const card = document.getElementById("portfolioCard");
+  if (!localStorage.getItem("ardhi_token")) { card.style.display = "none"; return; }
+  const res = await fetch("/api/portfolio/summary", { headers: authHeaders() });
+  if (!res.ok) { card.style.display = "none"; return; }
+  const p = await res.json();
+  card.style.display = "";
+  document.getElementById("portfolioTiles").innerHTML = [
+    tile("Deals", p.deal_count),
+    tile("Total equity", fmt(p.total_equity_invested)),
+    tile("Equity-weighted IRR", pctFmt(p.equity_weighted_irr)),
+    tile("Portfolio DSCR (yr 1)", p.portfolio_dscr_year1 != null ? p.portfolio_dscr_year1.toFixed(2) : "n/a"),
+    tile("Total NOI (yr 1)", fmt(p.total_noi_year1)),
+  ].join("");
+  document.getElementById("portfolioAlerts").innerHTML = "";
+}
+
+document.getElementById("refreshPortfolioBtn").addEventListener("click", refreshPortfolio);
+
+document.getElementById("alertsBtn").addEventListener("click", async () => {
+  const res = await fetch("/api/portfolio/alerts?rate_bps=100&rent_pct=-10", { headers: authHeaders() });
+  if (!res.ok) return;
+  const out = await res.json();
+  const ul = document.getElementById("portfolioAlerts");
+  if (out.alert_count === 0) {
+    ul.innerHTML = "<li>No deals breach thresholds under this shock.</li>";
+  } else {
+    ul.innerHTML = out.alerts.map((a) =>
+      `<li><b>${a.name}</b>: ${a.flags.join("; ")}</li>`).join("");
+  }
+});
+
+// Refresh the portfolio whenever auth state changes or a deal is saved.
+const _origRenderAuth = renderAuthState;
+renderAuthState = function () { _origRenderAuth(); refreshPortfolio().catch(() => {}); };
+const _origSave = document.getElementById("saveBtn").onclick;
+document.getElementById("saveBtn").addEventListener("click", () => setTimeout(() => refreshPortfolio().catch(() => {}), 300));
+refreshPortfolio().catch(() => {});

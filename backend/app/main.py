@@ -18,12 +18,13 @@ from fastapi.staticfiles import StaticFiles
 
 from connectors import market_snapshot
 
-from . import auth, avm_service, comps, ingest, insights, narrative, rulepack, store
+from . import (auth, avm_service, comps, ingest, insights, narrative,
+               portfolio, rulepack, store)
 from .analysis import analyze
 from .report import build_pdf
 from .schemas import (
     AnalysisResult, CompIn, Credentials, DealInput, IndicateRequest,
-    AvmRequest, IngestJsonRequest, MonteCarloRequest, ValuationRequest,
+    ActualIn, AvmRequest, IngestJsonRequest, MonteCarloRequest, ValuationRequest,
 )
 
 app = FastAPI(title="Ardhi Analytics", version="0.1.0",
@@ -139,6 +140,32 @@ def _owned_deal(deal_id: str, user: dict) -> dict:
         # 404 for both cases: don't reveal other users' deal ids
         raise HTTPException(status_code=404, detail="deal not found")
     return deal
+
+
+@app.get("/api/portfolio/summary")
+def portfolio_summary(user: dict = Depends(auth.current_user)) -> dict:
+    return portfolio.summary(user["id"], user["role"] == "admin")
+
+
+@app.get("/api/portfolio/alerts")
+def portfolio_alerts(rate_bps: float = 100, rent_pct: float = -10,
+                     user: dict = Depends(auth.current_user)) -> dict:
+    return portfolio.alerts(user["id"], user["role"] == "admin", rate_bps, rent_pct)
+
+
+@app.post("/api/deals/{deal_id}/actuals")
+def add_actual(deal_id: str, actual: ActualIn,
+               user: dict = Depends(auth.current_user)) -> dict:
+    _owned_deal(deal_id, user)  # 404 if not the owner's deal
+    return portfolio.record_actual(deal_id, user["id"], actual.year,
+                                   actual.gross_rent_actual, actual.opex_actual,
+                                   actual.note)
+
+
+@app.get("/api/deals/{deal_id}/actuals")
+def deal_variance(deal_id: str, user: dict = Depends(auth.current_user)) -> dict:
+    owned = _owned_deal(deal_id, user)
+    return portfolio.variance(deal_id, owned["payload"], user["id"])
 
 
 @app.post("/api/deals")
