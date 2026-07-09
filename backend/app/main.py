@@ -18,12 +18,12 @@ from fastapi.staticfiles import StaticFiles
 
 from connectors import market_snapshot
 
-from . import auth, comps, insights, narrative, rulepack, store
+from . import auth, avm_service, comps, insights, narrative, rulepack, store
 from .analysis import analyze
 from .report import build_pdf
 from .schemas import (
     AnalysisResult, CompIn, Credentials, DealInput, IndicateRequest,
-    MonteCarloRequest, ValuationRequest,
+    AvmRequest, MonteCarloRequest, ValuationRequest,
 )
 
 app = FastAPI(title="Ardhi Analytics", version="0.1.0",
@@ -184,6 +184,16 @@ def comp_stats(kind: str | None = None, use: str | None = None,
                since: str | None = None) -> dict:
     return comps.stats({"kind": kind, "use": use, "region": region,
                         "district": district, "since": since})
+
+
+@app.post("/api/avm")
+def avm_estimate(req: AvmRequest) -> dict:
+    filters = {"kind": req.kind, "use": req.use, "region": req.region,
+               "district": req.district, "since": req.since}
+    try:
+        return avm_service.estimate(req.area_sqm, filters)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
 
 
 @app.post("/api/comps/indicate")

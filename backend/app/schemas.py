@@ -83,6 +83,15 @@ class IndicateRequest(BaseModel):
     since: Optional[str] = None
 
 
+class AvmRequest(BaseModel):
+    area_sqm: float = Field(..., gt=0)
+    kind: Literal["sale", "rent"] = "sale"
+    use: Optional[Literal["residential", "commercial", "land"]] = None
+    region: Optional[str] = None
+    district: Optional[str] = None
+    since: Optional[str] = None
+
+
 class MonteCarloRequest(BaseModel):
     deal: DealInput
     n: int = Field(1000, ge=100, le=5000)

@@ -556,3 +556,30 @@ document.getElementById("narrativeBtn").addEventListener("click", async () => {
     btn.disabled = false; btn.textContent = "Generate written analysis";
   }
 });
+
+document.getElementById("avmBtn").addEventListener("click", async () => {
+  errBox.textContent = "";
+  const area = parseFloat(document.getElementById("subjArea").value);
+  if (!area) { errBox.textContent = "Enter a subject area first."; return; }
+  const res = await fetch("/api/avm", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...compFilters(), area_sqm: area }),
+  });
+  const out = await res.json();
+  const tiles = document.getElementById("compTiles");
+  if (out.estimate != null) {
+    const method = out.method === "hedonic_loglog_regression"
+      ? `Regression (n=${out.sample_size}, R²=${out.r_squared.toFixed(2)})`
+      : "Median unit price (thin data)";
+    tiles.innerHTML =
+      tile("AVM estimate", fmt(out.estimate)) +
+      tile("95% interval", `${fmt(out.lower)} – ${fmt(out.upper)}`) +
+      tile("Method", method) +
+      tile("Confidence", out.confidence) +
+      (out.size_elasticity != null ? tile("Size elasticity", out.size_elasticity.toFixed(2)) : "");
+    document.getElementById("compNote").textContent = out.note;
+  } else {
+    tiles.innerHTML = "";
+    document.getElementById("compNote").textContent = out.note;
+  }
+});

@@ -33,6 +33,11 @@ Enter a rental/commercial property deal → one click →
 - Comparables database (`/api/comps`): contributed sale/rent observations
   with source attribution, unit-price market stats (median/range per m²),
   dispersion-aware confidence grades, and screening value indications;
+  plus an automated valuation model (`/api/avm`) — a pure-Python hedonic
+  log-log size regression on the segment's comps, returning a point estimate,
+  an asymmetric 95% prediction interval, R²/size-elasticity, and a confidence
+  grade; falls back to the median indication when evidence is too thin to
+  regress (min 6 comps);
   demo seed script with clearly-labeled illustrative data
   (`python -m scripts.seed_comps`)
 - Accounts & multi-user (`/api/auth/*`): email+password with PBKDF2 hashing
@@ -153,5 +158,5 @@ backend/
 
 Phase 1 is complete; Phase 2 is underway (deployment configs and the AI
 narrative layer are in). Remaining Phase 2+: listing scrapers / partner data
-feeds, an automated valuation model (AVM), portfolio tracking with alerts,
+feeds, portfolio tracking with alerts,
 and — after CMSA legal structuring — the crowdfunding module.
