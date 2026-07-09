@@ -1,0 +1,7 @@
+kind,use,region,district,price,area_sqm,observed_date,source,notes
+sale,residential,Dar es Salaam,Kinondoni,415000000,305,2026-04,SAMPLE partner agency feed — not real,3-bed
+sale,residential,Dar es Salaam,Kinondoni,498000000,352,2026-02,SAMPLE partner agency feed — not real,4-bed
+sale,residential,Dar es Salaam,Kinondoni,372000000,288,2026-01,SAMPLE partner agency feed — not real,
+sale,residential,Dar es Salaam,Masaki,880000000,410,2026-03,SAMPLE partner agency feed — not real,waterfront
+rent,residential,Dar es Salaam,Kinondoni,44000000,300,2026-04,SAMPLE partner agency feed — not real,annual
+sale,commercial,Dar es Salaam,Ilala,1250000000,640,2025-12,SAMPLE partner agency feed — not real,retail

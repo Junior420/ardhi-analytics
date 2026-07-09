@@ -12,18 +12,18 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from connectors import market_snapshot
 
-from . import auth, avm_service, comps, insights, narrative, rulepack, store
+from . import auth, avm_service, comps, ingest, insights, narrative, rulepack, store
 from .analysis import analyze
 from .report import build_pdf
 from .schemas import (
     AnalysisResult, CompIn, Credentials, DealInput, IndicateRequest,
-    AvmRequest, MonteCarloRequest, ValuationRequest,
+    AvmRequest, IngestJsonRequest, MonteCarloRequest, ValuationRequest,
 )
 
 app = FastAPI(title="Ardhi Analytics", version="0.1.0",
@@ -184,6 +184,32 @@ def comp_stats(kind: str | None = None, use: str | None = None,
                since: str | None = None) -> dict:
     return comps.stats({"kind": kind, "use": use, "region": region,
                         "district": district, "since": since})
+
+
+def _require_admin(user: dict) -> None:
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="ingestion is admin-only")
+
+
+@app.post("/api/ingest/json")
+def ingest_json(req: IngestJsonRequest, user: dict = Depends(auth.current_user)) -> dict:
+    _require_admin(user)
+    try:
+        return ingest.from_json(req.records, req.source, req.dry_run, req.mapping)
+    except (ValueError, TypeError) as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+
+@app.post("/api/ingest/csv")
+def ingest_csv(source: str, dry_run: bool = True,
+               file: UploadFile = File(...),
+               user: dict = Depends(auth.current_user)) -> dict:
+    _require_admin(user)
+    try:
+        text_data = file.file.read().decode("utf-8-sig")
+        return ingest.from_csv(text_data, source, dry_run)
+    except (ValueError, TypeError, UnicodeDecodeError) as e:
+        raise HTTPException(status_code=422, detail=str(e))
 
 
 @app.post("/api/avm")

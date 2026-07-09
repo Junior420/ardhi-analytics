@@ -8,12 +8,13 @@ as strong.
 
 from __future__ import annotations
 
+import hashlib
 import statistics
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import text
+from sqlalchemy import inspect, text
 
 from dbcore import engine_for
 
@@ -32,7 +33,8 @@ _SCHEMA = """CREATE TABLE IF NOT EXISTS comparables (
     source TEXT NOT NULL,
     contributor TEXT NOT NULL DEFAULT 'anonymous',
     notes TEXT NOT NULL DEFAULT '',
-    created_at TEXT NOT NULL
+    created_at TEXT NOT NULL,
+    dedup_hash TEXT
 )"""
 
 
@@ -40,21 +42,48 @@ def _engine():
     engine = engine_for(store.DB_PATH)
     with engine.begin() as conn:
         conn.execute(text(_SCHEMA))
+    # Migrate pre-ingestion databases that lack the dedup column.
+    cols = [c["name"] for c in inspect(engine).get_columns("comparables")]
+    if "dedup_hash" not in cols:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE comparables ADD COLUMN dedup_hash TEXT"))
     return engine
+
+
+def dedup_hash(rec: dict) -> str:
+    """Content fingerprint used to skip duplicate observations. Two records
+    for the same transaction (same segment, price, area, date, source) hash
+    equal even if ingested twice or from overlapping feeds."""
+    parts = [str(rec.get("kind", "")).lower(), str(rec.get("use", "")).lower(),
+             str(rec.get("region", "")).strip().lower(),
+             str(rec.get("district", "")).strip().lower(),
+             str(round(float(rec["price"]))),
+             str(round(float(rec["area_sqm"]))) if rec.get("area_sqm") else "",
+             str(rec.get("observed_date", "")),
+             str(rec.get("source", "")).strip().lower()]
+    return hashlib.sha256("|".join(parts).encode()).hexdigest()
+
+
+def hash_exists(h: str) -> bool:
+    with _engine().connect() as conn:
+        row = conn.execute(text("SELECT 1 FROM comparables WHERE dedup_hash = :h LIMIT 1"),
+                           {"h": h}).first()
+    return row is not None
 
 
 def add_comp(rec: dict) -> dict:
     rec = dict(rec)
     rec["id"] = str(uuid.uuid4())
     rec["created_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    rec.setdefault("dedup_hash", dedup_hash(rec))
     with _engine().begin() as conn:
         conn.execute(text(
             """INSERT INTO comparables
                (id, kind, use, region, district, price, currency, area_sqm,
-                observed_date, source, contributor, notes, created_at)
+                observed_date, source, contributor, notes, created_at, dedup_hash)
                VALUES (:id, :kind, :use, :region, :district, :price, :currency,
                        :area_sqm, :observed_date, :source, :contributor, :notes,
-                       :created_at)"""), rec)
+                       :created_at, :dedup_hash)"""), rec)
     return rec
 
 

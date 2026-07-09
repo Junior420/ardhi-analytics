@@ -33,7 +33,12 @@ Enter a rental/commercial property deal → one click →
 - Comparables database (`/api/comps`): contributed sale/rent observations
   with source attribution, unit-price market stats (median/range per m²),
   dispersion-aware confidence grades, and screening value indications;
-  plus an automated valuation model (`/api/avm`) — a pure-Python hedonic
+  bulk data ingestion (`/api/ingest/csv`, `/api/ingest/json`, admin-only) —
+  a source-agnostic pipeline (normalize → validate → deduplicate → provenance)
+  with CSV and partner-JSON adapters, per-row rejection reasons, content-hash
+  deduplication (idempotent re-runs), and a dry-run preview; ingested rows are
+  stamped `ingest:<source>`. Sample feed: `scripts/sample_partner_feed.csv`.
+  Plus an automated valuation model (`/api/avm`) — a pure-Python hedonic
   log-log size regression on the segment's comps, returning a point estimate,
   an asymmetric 95% prediction interval, R²/size-elasticity, and a confidence
   grade; falls back to the median indication when evidence is too thin to
@@ -157,6 +162,5 @@ backend/
 ## Next (from the blueprint)
 
 Phase 1 is complete; Phase 2 is underway (deployment configs and the AI
-narrative layer are in). Remaining Phase 2+: listing scrapers / partner data
-feeds, portfolio tracking with alerts,
+narrative layer are in). Remaining Phase 2+: portfolio tracking with alerts,
 and — after CMSA legal structuring — the crowdfunding module.

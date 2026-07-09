@@ -83,6 +83,13 @@ class IndicateRequest(BaseModel):
     since: Optional[str] = None
 
 
+class IngestJsonRequest(BaseModel):
+    source: str = Field(..., min_length=2, description="Feed name, e.g. 'kupatana' or 'partner-x'")
+    records: list[dict] = Field(..., min_length=1)
+    mapping: Optional[dict[str, str]] = Field(None, description="canonical_field -> input_key")
+    dry_run: bool = True
+
+
 class AvmRequest(BaseModel):
     area_sqm: float = Field(..., gt=0)
     kind: Literal["sale", "rent"] = "sale"
