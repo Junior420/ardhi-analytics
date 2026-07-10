@@ -1,15 +1,45 @@
 """Vercel serverless entrypoint.
 
 Vercel's Python runtime serves the ASGI `app` exported here; vercel.json
-rewrites every route to this function. The backend/ package layout is kept,
-so this file only wires up paths and serverless-safe defaults.
+rewrites every route to this function. When the repo's backend/ tree is
+present (running from a full checkout) it is imported directly; in the
+slim Vercel deployment (this file + requirements only) the pinned commit's
+backend/ is fetched once per instance from the public GitHub tarball and
+cached in /tmp.
 """
 
+import io
 import os
 import sys
+import tarfile
+import urllib.request
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "backend"))
+REPO = "Junior420/ardhi-analytics"
+COMMIT = "0d2cce723a14df29b0e6330e574e5c33aa3978f6"  # backend source pin
+
+
+def _source_root() -> Path:
+    local = Path(__file__).resolve().parent.parent / "backend"
+    if local.exists():
+        return local
+    dest = Path("/tmp") / f"ardhi-src-{COMMIT[:12]}"
+    marker = dest / ".complete"
+    if not marker.exists():
+        url = f"https://codeload.github.com/{REPO}/tar.gz/{COMMIT}"
+        data = urllib.request.urlopen(url, timeout=30).read()
+        with tarfile.open(fileobj=io.BytesIO(data)) as tf:
+            root = tf.getnames()[0].split("/")[0]
+            members = [m for m in tf.getmembers()
+                       if m.name.startswith(f"{root}/backend/")]
+            tf.extractall(dest, members=members)
+        (dest / "tarball-root.txt").write_text(root)
+        marker.touch()
+    root = (dest / "tarball-root.txt").read_text().strip()
+    return dest / root / "backend"
+
+
+sys.path.insert(0, str(_source_root()))
 
 # Only /tmp is writable on Vercel. Used for the SQLite fallback and market
 # cache when DATABASE_URL (Supabase/Postgres) isn't configured — note SQLite
