@@ -3,6 +3,12 @@
 Real estate finance & investment analysis platform, Tanzania-first.
 Blueprint: [`docs/BLUEPRINT.md`](docs/BLUEPRINT.md).
 
+**Live demo: <https://ardhi-analytics.vercel.app>** — deployed on Vercel
+serverless (see `api/index.py`). Without a `DATABASE_URL` the demo stores
+accounts/deals/comps in per-instance SQLite under `/tmp`, so that data is
+ephemeral; point `DATABASE_URL` at Supabase/Postgres in the Vercel project
+settings for durable storage (see [`docs/SUPABASE.md`](docs/SUPABASE.md)).
+
 ## What works now
 
 Enter a rental/commercial property deal → one click →
